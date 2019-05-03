@@ -1,6 +1,7 @@
 'use strict';
 
-var working_directory="C:\\Users\\volumen\\"
+//var working_directory="C:\\Users\\volumen\\"
+var working_directory="C:\\Users\\IvanQ\\Desktop\\borrame\\b2b\\"
 
 const { spawn } = require( 'child_process' )
 const tokenizer = require( 'string-tokenizer' )
@@ -12,7 +13,7 @@ const regexArchivoEliminado = / delete mode [0-9]{6} .*/g
 const regexArchivoCreado = / create mode [0-9]{6} .*/g
 const regexArchivoModificado = /[0-9]*\t[0-9]*\t.*/g
 
-const listaDirectoriosAIgnorar = ["node_modules/","vendor/"]
+const listaDirectoriosAIgnorar = ["node_modules/","vendor/","composer.json","composer.lock","package.json","package-lock.json","public/"]
 
 const longitudSeparadorLog = 100
 
@@ -24,19 +25,24 @@ try {
 	parametros.push('log')
 	parametros.push('--numstat')
 	parametros.push('--no-merges')
-	parametros.push('--since=2019-01-01')
-	//parametros.push('--author=mcclone')
+	parametros.push('--since=2018-12-26')
+	parametros.push('--before=2019-02-01')
+	parametros.push('--author=iscjesus')
 	parametros.push('--summary')
 	parametros.push('--no-renames')
 	parametros.push('--ignore-blank-lines')
 	parametros.push('--ignore-all-space')
 	parametros.push('--date=iso')
+	//parametros-push('--ignore-cr-at-eol')
+	parametros.push('--ignore-space-at-eol')
+	parametros.push('--ignore-space-change')
 	ls = spawn( 'git', parametros, { cwd: working_directory } );
 } catch(e) {
 	console.log(e);
 }
 
 var buffer=""
+var estadisticas=[]
 
 ls.stdout.on( 'data', data => {
 	console.log("leyendo")
@@ -51,14 +57,17 @@ ls.on( 'close', code => {
 	console.log('procesando')
 	commits=analizarLog(buffer);
 	console.log(commits.length+" commits procesados")
-    // console.log(JSON.stringify(commits,null,2))
     console.log('buscando autores')
     var autores=extraerListaDeAutores(commits)
     console.log('contabilizando')
+
     autores.forEach(function(element,index,array){
-    	console.log(element)
-    	console.log(extraerEstadisticasPorAutor(commits,element))
-    })    
+    	estadisticas.push({
+    		autor: element,
+    		estadisticas:extraerEstadisticasPorAutor(commits,element)
+    	})
+    })
+   	console.log(estadisticas)
 } );
 
 //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -224,7 +233,11 @@ function extraerEstadisticasPorAutor(commits,autor){
 	}
 	commits.forEach(function(element,index,array){
 		if(element.autor.indexOf(autor)==-1) return
-		estadisticas.lineasAgregadas+=sumarLineasCambiadas(element)
+		var lineasCambiadas=sumarLineasCambiadas(element)
+		estadisticas.lineasAgregadas+=lineasCambiadas
+		console.log(element.autor)
+		console.log(element.HashCommit)
+		console.log(lineasCambiadas)
 	})
 	return estadisticas
 }
